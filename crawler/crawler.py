@@ -1,3 +1,4 @@
+from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 import sys
@@ -12,24 +13,54 @@ sys.path.append(
 
 from detector.detector import detect_ad
 
-
-url = "http://127.0.0.1:5500/test_site/index.html"
-
-response = requests.get(url)
-
-soup = BeautifulSoup(response.text, "html.parser")
-
-comments = soup.find_all(class_="comment")
+visited = set()
 
 
-print("=== 불법 광고 탐지 결과 ===")
+def crawl(url):
 
-for comment in comments:
+    if url in visited:
+        return
 
-    text = comment.get_text(strip=True)
+    visited.add(url)
 
-    result = detect_ad(text)
+    print("방문:", url)
 
-    print()
-    print("내용:", text)
-    print("판정:", result)
+    # 1. URL에 접속해서 HTML 받아오기
+    response = requests.get(url)
+
+    # 2. HTML 분석하기
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    # 3. 페이지 안의 댓글 찾기
+    comments = soup.find_all(class_ = "comment")
+
+    print("=== 불법 광고 탐지 결과 ===")
+
+    for comment in comments:
+
+        text = comment.get_text(strip=True)
+
+        result = detect_ad(text)
+
+        print()
+        print("내용:", text)
+        print("판정:", result)
+
+    # 4. 페이지 안의 링크 찾기
+    links = soup.find_all("a")
+
+    for link in links:
+        href = link.get("href")
+
+        
+        full_url = urljoin(url, href)
+
+        
+        print("발견", full_url)
+
+        #재귀호출
+        crawl(full_url)
+
+start_url = "http://127.0.0.1:5500/test_site/index.html"
+
+crawl(start_url)
