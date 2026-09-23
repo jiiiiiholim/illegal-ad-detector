@@ -64,3 +64,5 @@ def crawl(url):
 start_url = "http://127.0.0.1:5500/test_site/index.html"
 
 crawl(start_url)
+
+#테스트 해보려고용 지호야 화이팅 ^__^
