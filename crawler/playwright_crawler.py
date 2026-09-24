@@ -1,8 +1,18 @@
-import asyncio
-from urllib.parse import urljoin, urlparse
-from playwright.async_api import async_playwright
+from urllib.parse import urljoin
+import requests
+from bs4 import BeautifulSoup
+import sys
+import os
 
-# 이미 방문한 URL을 기록하여 중복 방문을 방지합니다.
+# detector 폴더를 불러올 수 있도록 경로 추가
+sys.path.append(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..")
+    )
+)
+
+from detector.detector import detect_ad
+
 visited = set()
 # 팀장이 요구한 최종 수집 결과 저장용 리스트
 results = []
@@ -98,25 +108,3 @@ async def crawl(page, url, base_domain, depth=0, max_depth=1):
 
     except Exception as e:
         print(f"[ERROR] 접속 실패 ({url}): {e}")
-
-
-async def main():
-    start_url = "http://127.0.0.1:5500/test_site/index.html"
-    initial_domain = urlparse(start_url).netloc
-
-    async with async_playwright() as p:
-        # headless=True는 브라우저 창을 띄우지 않고 백그라운드에서 실행합니다.
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
-
-        print("=== 동적 불법광고 탐지 크롤러 시작 ===")
-        await crawl(page, start_url, base_domain=initial_domain, max_depth=1)
-        await browser.close()
-
-    import json
-    print(f"\n=== 총 수집된 데이터 개수: {len(results)}개 ===")
-    print(json.dumps(results[:3], indent=2, ensure_ascii=False))  # 샘플로 상위 3개 출력
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
