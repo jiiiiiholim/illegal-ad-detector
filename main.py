@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from crawler.crawler_1 import run_scanner
+from crawler.playwright_crawler import run_scanner
 
 # 1. FastAPI 앱 생성 (uvicorn이 찾는 'app' 변수)
 app = FastAPI(title="공공 웹사이트 불법광고 탐지 API")
