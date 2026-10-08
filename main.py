@@ -24,7 +24,10 @@ def read_root():
 
 @app.post("/api/scan")
 def scan_website(request: ScanRequest):
-    results = run_scanner(request.url)
+
+    #run_scanner()
+    results = run_scanner(request.url)   
+
     return {
         "status": "success",
         "target_url": request.url,

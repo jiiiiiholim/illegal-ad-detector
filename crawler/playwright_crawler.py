@@ -1,8 +1,9 @@
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 import sys
 import os
+
 
 # detector 폴더를 불러올 수 있도록 경로 추가
 sys.path.append(
@@ -108,3 +109,61 @@ async def crawl(page, url, base_domain, depth=0, max_depth=1):
 
     except Exception as e:
         print(f"[ERROR] 접속 실패 ({url}): {e}")
+
+from playwright.async_api import async_playwright
+import asyncio
+
+
+async def run_scanner_async(url):
+    global visited, results
+
+    # 이전 검사 결과 초기화
+    visited = set()
+    results = []
+
+    base_domain = urlparse(url).netloc
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+
+        try:
+            await crawl(
+                page,
+                url,
+                base_domain,
+                depth=0,
+                max_depth=1
+            )
+        finally:
+            await browser.close()
+
+    # 수집된 텍스트를 광고 탐지기에 전달
+    for item in results:
+        try:
+            detection = detect_ad(item["text"])
+
+            # detector.py가 문자열을 반환하므로
+            # 그 결과를 category에 저장
+            item["category"] = detection
+
+            # 위험도 설정
+            if detection == "정상":
+                item["risk_score"] = 0
+            else:
+                item["risk_score"] = 1
+
+        except Exception as e:
+            print(f"[DETECT ERROR] {e}")
+
+    # 정상인 내용은 제외하고 위반 의심 결과만 반환
+    detected_results = [
+        item for item in results
+        if item["category"] != "정상"
+    ]
+
+    return detected_results
+
+
+def run_scanner(url):
+    return asyncio.run(run_scanner_async(url))
